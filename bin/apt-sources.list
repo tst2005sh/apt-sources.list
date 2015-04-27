@@ -270,6 +270,26 @@ deb-src	http://ftp.fr.debian.org/debian/ wheezy main contrib
 deb	http://security.debian.org/ wheezy/updates main
 deb-src	http://security.debian.org/ wheezy/updates main
 EOF
+
+	writesourceslistifnotexists wheezy-lts\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ wheezy-lts main non-free contrib
+deb-src	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib
+
+deb	http://security.debian.org/ wheezy-lts/updates main
+deb-src	http://security.debian.org/ wheezy-lts/updates main
+EOF
+
+	writesourceslistifnotexists jessie\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ jessie main non-free contrib
+deb-src	http://ftp.fr.debian.org/debian/ jessie main contrib
+
+deb	http://security.debian.org/ jessie/updates main
+deb-src	http://security.debian.org/ jessie/updates main
+EOF
+
+
 }
 
 _editor() {
