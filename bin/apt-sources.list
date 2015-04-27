@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# ----------------------------------------------------------------------------
+#	-- apt-sources.list - An utility to manage APT's sources.list files --
+#	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
+# ----------------------------------------------------------------------------
+
 # TODO : voir lsb_release -cs -> sqeeze|wheezy|...
 
 SCRIPTNAME="$(basename "$0" .sh)"
