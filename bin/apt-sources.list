@@ -1,0 +1,354 @@
+#!/bin/bash
+
+# TODO : voir lsb_release -cs -> sqeeze|wheezy|...
+
+SCRIPTNAME="$(basename "$0" .sh)"
+
+show_usage() {
+	echo "Usage: $SCRIPTNAME -hlaAu|{<name> on|off|cat|list|edit}"
+	echo "options:
+	--help|-h		show this help
+	--[list-]enabled|-e	show only enabled   lists
+	--[list-]available|-a	show only available lists
+	--[list-]all|-l|-A	show available and enabled lists
+	--update|-u		do an apt-get update
+	--splitconfig		try to split your sources.list to sources.list.d
+	--check			check your sources.list files
+	--fixmode		fix your sources.list files modes
+	--split			try to split your sources.list
+	--installsample		create all possible disabled sources.list if not already exists"
+}
+
+show_help() {
+	show_usage
+	echo "Sample of use:
+	\$ $SCRIPTNAME list
+	on   squeeze-backports
+
+	\$ $SCRIPTNAME list -a
+	on   squeeze-backports
+	off  sid
+	off  wheezy
+
+	\$ $SCRIPTNAME sid on
+	sid enabled
+
+	\$ $SCRIPTNAME sid off
+	sid disabled
+
+	\$ $SCRIPTNAME sid edit"
+}
+
+show_help() {
+	show_usage
+	echo "Sample of use:
+	\$ $SCRIPTNAME list
+	on   squeeze-backports
+
+	\$ $SCRIPTNAME list -a
+	on   squeeze-backports
+	off  sid
+	off  wheezy
+
+	\$ $SCRIPTNAME sid on
+	sid enabled
+
+	\$ $SCRIPTNAME sid off
+	sid disabled
+
+	\$ $SCRIPTNAME sid edit"
+}
+
+COMMANDS="\
+--usage
+--help
+--list-enabled
+--list-available
+--list-all
+--update
+--splitconfig
+--check
+--fixmode
+--supported-commands
+--supported-aliases
+--installsample"
+
+ALIASES="\
+--available	--list-available
+--enabled	--list-enabled
+--all		--list-all
+--list		--list-all
+available	--list-available
+enabled		--list-enabled
+all		--list-all
+list		--list-all
+list-available	--list-all
+list-enabled	--list-enabled
+list-all	--list-all"
+
+alias2command() {
+	echo "$ALIASES" | while read a c; do
+		if [ "$a" = "$1" ]; then
+			echo "$c"
+			return 0
+		fi
+	done
+	[ $? -eq 0 ] && return 0
+	return 1
+}
+
+validcommand() {
+	echo "$COMMANDS" \
+	| while read c; do
+		if [ "$c" = "$1" ]; then
+			return 0 ;# true
+		fi
+	done
+	[ $? -eq 0 ] && return 0
+	return 1 ;# false
+}
+
+DO_CHECK=false
+DO_FIXMODE=false
+DO_SPLITCONFIG=false
+LIST_ACTIVE=false
+LIST_INACTIVE=false
+LIST_UPDATE=false
+INSTALLSAMPLE=false
+
+while [ $# -gt 0 ]; do
+	opt="$(alias2command "$1")"
+	[ -z "$opt" ] && opt="$1"
+	case "$opt" in
+		--usage)		show_usage ; exit 1 ;;
+		--help|-h) 		show_help  ; exit 1 ;;
+		--supported-commands)	echo "$COMMANDS" ; exit 0 ;;
+		--supported-aliases)	echo "$ALIASES" | tr "\t" " " | cut -d\  -f1 ; exit 0 ;;
+		--list-enabled|-e)	LIST_ACTIVE=true	;;
+		--list-available|-a)	LIST_INACTIVE=true	;;
+		--list-all|-l|-A)	LIST_ACTIVE=true; LIST_INACTIVE=true	;;
+		--check)		DO_CHECK=true		;;
+		--fixmode)		DO_CHECK=true; DO_FIXMODE=true ;;
+		--splitconfig)		DO_SPLITCONFIG=true	;;
+		--update|-u)		LIST_UPDATE=true	;;
+		--installsample)	INSTALLSAMPLE=true	;;
+		*) break
+	esac
+	shift
+done
+
+list_enabled() {
+	cd /etc/apt/sources.list.d/ && find -type f -name '*.list'          -printf "%P\n" | sed 's,\.list.*$,,g' | sort -u | sed 's,^,on   ,g'
+}
+list_available() {
+	cd /etc/apt/sources.list.d/ && find -type f -name '*.list.disabled' -printf "%P\n" | sed 's,\.list.*$,,g' | sort -u | sed 's,^,off  ,g'
+}
+
+filemode_is_ok() {
+	case "$1" in
+		644) return 0 ;;
+		*) return 1
+	esac
+}
+
+_fixmode() {
+	for f in /etc/apt/sources.list /etc/apt/sources.list.d/*; do
+		if ! filemode_is_ok "$(stat -c '%a' "$f")"; then
+			echo "WARNING: $f mode seems bad '$(stat -c '%A' "$f")' recommanded: '-rw-r--r--'"
+			if $DO_FIXMODE; then
+				chmod 0644 "$f" && echo "$f: fixed" || echo "$f: failed to fix"
+			fi
+		fi
+	done
+}
+do_fixmode() { _fixmode /etc/apt/sources.list /etc/apt/sources.list.d/*; }
+do_check()   { _fixmode /etc/apt/sources.list /etc/apt/sources.list.d/*; }
+
+deb_stripspaces() {
+	tr "\t" " " | sed -e 's,[ ]\+, ,g'
+}
+deb_release_get() {
+	deb_stripspaces | cut -d\  -f3 | cut -d/ -f1
+}
+
+deb_site_get() {
+	deb_stripspaces | cut -d\  -f2 #| cut -d/ -f3
+}
+
+deb_targets_get() {
+	deb_stripspaces | cut -d\  -f4-
+}
+
+do_splitconfig() {
+	for f in /etc/apt/sources.list /etc/apt/sources.list.d/*; do
+		grep '^deb' "$f" | while read line; do
+			release="$(echo "$line" | deb_release_get)"
+			cmd="${line%% *}"
+			site="$(echo "$line" | deb_site_get)"
+			uid="$(echo "$release $site" | md5sum | sed 's,^\(....\).*$,\1,g')"
+			targets="$(echo "$line" | deb_targets_get)"
+			echo "(file:$uid ${release}.list) $cmd $site $release $targets"
+
+			#for target in $targets; do
+			#	echo "(file:$uid) $cmd $site $release $target"
+			#done
+		done
+	done
+}
+
+writeifnotexists() {
+	if [ -n "$1" ] && [ ! -f "$1" ]; then
+		cat - >> "$1"
+	fi
+}
+
+writesourceslistifnotexists() {
+	local dir=/etc/apt/sources.list.d
+	local file="$1";shift
+	case "$file" in
+		*.list)			file="${file%.list}"		;;
+		*.list.disabled)	file="${file%.list.disabled}"	;;
+	esac
+	if [ -n "$file" ] && [ ! -f "$dir/$file.list" ] && [ ! -f "$dir/$file.list.disabled" ]; then
+		echo >&2 "write $file"
+		cat - >> "$dir/$file.list.disabled"
+	fi
+}
+
+do_installsample() {
+
+	writesourceslistifnotexists etch-archive\
+<<EOF
+deb	http://archive.debian.org/debian/ etch main non-free contrib
+deb-src	http://archive.debian.org/debian/ etch main non-free contrib
+
+deb	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
+deb-src	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
+EOF
+
+	writesourceslistifnotexists sid\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ sid main non-free contrib
+deb-src	http://ftp.fr.debian.org/debian/ sid main contrib
+EOF
+
+	writesourceslistifnotexists squeeze-backports\
+<<EOF
+deb	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
+deb-src	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
+EOF
+
+	writesourceslistifnotexists squeeze\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ squeeze main non-free contrib
+deb-src	http://ftp.fr.debian.org/debian/ squeeze main contrib
+
+deb	http://security.debian.org/ squeeze/updates main
+deb-src	http://security.debian.org/ squeeze/updates main
+EOF
+
+	writesourceslistifnotexists squeeze-lts\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ squeeze-lts main non-free contrib
+deb-src	http://ftp.fr.debian.org/debian/ squeeze-lts main contrib
+
+#deb	http://security.debian.org/ squeeze-lts/updates main
+#deb-src	http://security.debian.org/ squeeze-lts/updates main
+EOF
+
+	writesourceslistifnotexists wheezy-backports\
+<<EOF
+deb	http://ftp.fr.debian.org/debian wheezy-backports main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian wheezy-backports main contrib non-free
+EOF
+
+	writesourceslistifnotexists wheezy\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ wheezy main non-free contrib
+deb-src	http://ftp.fr.debian.org/debian/ wheezy main contrib
+
+deb	http://security.debian.org/ wheezy/updates main
+deb-src	http://security.debian.org/ wheezy/updates main
+EOF
+}
+
+_editor() {
+	# may I use $EDITOR ?
+	editor "$@"
+}
+
+$DO_SPLITCONFIG && do_splitconfig
+
+$INSTALLSAMPLE && do_installsample
+
+$DO_CHECK	&& do_check
+
+$LIST_ACTIVE   && list_enabled
+$LIST_INACTIVE && list_available
+
+if [ $# -eq 2 ]; then
+	name="$1"; shift
+	action="$1"; shift
+
+	# manage some aliases for action
+	case "$action" in
+		dump) action=cat  ;;
+		show) action=list ;;
+	esac
+
+	# 
+	case "$action" in
+		list)
+			list_available | grep "$name"
+			list_enabled   | grep "$name"
+		;;
+		cat)
+			if [ -f "/etc/apt/sources.list.d/$name.list" ]; then
+				if [ -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
+					echo >&2 "WARNING: /etc/apt/sources.list.d/$name.list.disabled also exists!"
+				fi
+				echo >&2 "File: /etc/apt/sources.list.d/$name.list"
+				cat -- "/etc/apt/sources.list.d/$name.list"
+			elif [ -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
+				echo >&2 "File: /etc/apt/sources.list.d/$name.list.disabled"
+				cat -- "/etc/apt/sources.list.d/$name.list.disabled"
+			fi
+			exit 0
+		;;
+		edit)
+			if [ -f "/etc/apt/sources.list.d/$name.list" ]; then
+				if [ -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
+					echo >&2 "WARNING: /etc/apt/sources.list.d/$name.list.disabled also exists!"
+				fi
+				_editor "/etc/apt/sources.list.d/$name.list"
+			elif [ -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
+				_editor "/etc/apt/sources.list.d/$name.list.disabled"
+			fi
+		;;
+		on)
+			if [ -f "/etc/apt/sources.list.d/$name.list.disabled" -a ! -f "/etc/apt/sources.list.d/$name.list" ]; then
+				mv -- "/etc/apt/sources.list.d/$name.list.disabled" "/etc/apt/sources.list.d/$name.list" && \
+					echo "$name enabled" || echo "$name failed"
+			fi
+		;;
+		off)
+			if [ -f "/etc/apt/sources.list.d/$name.list" -a ! -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
+				mv -- "/etc/apt/sources.list.d/$name.list" "/etc/apt/sources.list.d/$name.list.disabled" && \
+					echo "$name disabled" || echo "$name failed"
+			fi
+		;;
+		*) echo >&2 "ERROR" ; exit 1
+	esac
+fi
+
+if $LIST_UPDATE; then
+	apt-get update -qq
+	ret=$?
+	if [ $ret -eq 0 ]; then
+		echo "updated"
+	else
+		echo "update failed"
+	fi
+	exit $ret
+fi
+
