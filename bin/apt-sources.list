@@ -342,12 +342,14 @@ if [ $# -eq 2 ]; then
 		;;
 		edit)
 			if [ -f "/etc/apt/sources.list.d/$name.list" ]; then
+				_editor "/etc/apt/sources.list.d/$name.list"
 				if [ -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
 					echo >&2 "WARNING: /etc/apt/sources.list.d/$name.list.disabled also exists!"
 				fi
-				_editor "/etc/apt/sources.list.d/$name.list"
 			elif [ -f "/etc/apt/sources.list.d/$name.list.disabled" ]; then
 				_editor "/etc/apt/sources.list.d/$name.list.disabled"
+			else
+				_editor "/etc/apt/sources.list.d/$name.list"
 			fi
 		;;
 		on)
