@@ -185,7 +185,8 @@ deb_targets_get() {
 }
 
 do_splitconfig() {
-	for f in /etc/apt/sources.list /etc/apt/sources.list.d/*; do
+	for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+		[ -f "$f" ] || continue
 		grep '^deb' "$f" | while read line; do
 			release="$(echo "$line" | deb_release_get)"
 			cmd="${line%% *}"
@@ -193,7 +194,7 @@ do_splitconfig() {
 			uid="$(echo "$release $site" | md5sum | sed 's,^\(....\).*$,\1,g')"
 			targets="$(echo "$line" | deb_targets_get)"
 			echo "(file:$uid ${release}.list) $cmd $site $release $targets"
-
+			printf '%s\n' "$line" >> /etc/apt/sources.list.d/${release}.${uid}.list.new
 			#for target in $targets; do
 			#	echo "(file:$uid) $cmd $site $release $target"
 			#done
