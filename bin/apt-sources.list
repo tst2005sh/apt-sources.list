@@ -170,7 +170,7 @@ do_fixmode() { _fixmode /etc/apt/sources.list /etc/apt/sources.list.d/*; }
 do_check()   { _fixmode /etc/apt/sources.list /etc/apt/sources.list.d/*; }
 
 deb_stripspaces() {
-	tr "\t" " " | sed -e 's,[ ]\+, ,g'
+	tr '\t' ' ' | sed -e 's,[ ]\+, ,g'
 }
 deb_release_get() {
 	deb_stripspaces | cut -d\  -f3 | cut -d/ -f1
@@ -188,11 +188,11 @@ do_splitconfig() {
 	for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
 		[ -f "$f" ] || continue
 		grep '^deb' "$f" | while read line; do
-			release="$(echo "$line" | deb_release_get)"
-			cmd="${line%% *}"
-			site="$(echo "$line" | deb_site_get)"
-			uid="$(echo "$release $site" | md5sum | sed 's,^\(....\).*$,\1,g')"
-			targets="$(echo "$line" | deb_targets_get)"
+			local release="$(echo "$line" | deb_release_get)"
+			local cmd="${line%% *}"
+			local site="$(echo "$line" | deb_site_get)"
+			local uid="$(echo "$release $site" | md5sum | sed 's,^\(....\).*$,\1,g')"
+			local targets="$(echo "$line" | deb_targets_get)"
 			echo "(file:$uid ${release}.list) $cmd $site $release $targets"
 			printf '%s\n' "$line" >> /etc/apt/sources.list.d/${release}.${uid}.list.new
 			#for target in $targets; do
@@ -223,6 +223,7 @@ writesourceslistifnotexists() {
 
 do_installsample() {
 
+	#debian4 etch
 	writesourceslistifnotexists etch-archive\
 <<EOF
 deb	http://archive.debian.org/debian/ etch main non-free contrib
@@ -232,18 +233,10 @@ deb	http://archive.debian.org/debian-archive/debian-security/	etch/updates main 
 deb-src	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
 EOF
 
-	writesourceslistifnotexists sid\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ sid main non-free contrib
-deb-src	http://ftp.fr.debian.org/debian/ sid main contrib
-EOF
+	#debian5 lenny
+	#...
 
-	writesourceslistifnotexists squeeze-backports\
-<<EOF
-deb	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
-deb-src	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
-EOF
-
+	#debian6 squeeze
 	writesourceslistifnotexists squeeze\
 <<EOF
 deb	http://ftp.fr.debian.org/debian/ squeeze main non-free contrib
@@ -253,6 +246,7 @@ deb	http://security.debian.org/ squeeze/updates main
 deb-src	http://security.debian.org/ squeeze/updates main
 EOF
 
+	# debian6 squeeze-lts
 	writesourceslistifnotexists squeeze-lts\
 <<EOF
 deb	http://ftp.fr.debian.org/debian/ squeeze-lts main non-free contrib
@@ -262,39 +256,89 @@ deb-src	http://ftp.fr.debian.org/debian/ squeeze-lts main contrib
 #deb-src	http://security.debian.org/ squeeze-lts/updates main
 EOF
 
+	#debian6 squeeze-backports
+	writesourceslistifnotexists squeeze-backports\
+<<EOF
+deb	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
+deb-src	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
+EOF
+
+	# debian7 wheezy
+	writesourceslistifnotexists wheezy\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ wheezy main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ wheezy main contrib non-free
+
+deb	http://security.debian.org/ wheezy/updates main contrib non-free
+deb-src	http://security.debian.org/ wheezy/updates main contrib non-free
+EOF
+
+	# debian7 wheezy-lts
+	writesourceslistifnotexists wheezy-lts\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib non-free
+
+deb	http://security.debian.org/ wheezy-lts/updates main contrib non-free
+deb-src	http://security.debian.org/ wheezy-lts/updates main contrib non-free
+EOF
+
+	# debian7 wheezy-backports
 	writesourceslistifnotexists wheezy-backports\
 <<EOF
 deb	http://ftp.fr.debian.org/debian wheezy-backports main contrib non-free
 deb-src	http://ftp.fr.debian.org/debian wheezy-backports main contrib non-free
 EOF
 
-	writesourceslistifnotexists wheezy\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ wheezy main non-free contrib
-deb-src	http://ftp.fr.debian.org/debian/ wheezy main contrib
-
-deb	http://security.debian.org/ wheezy/updates main
-deb-src	http://security.debian.org/ wheezy/updates main
-EOF
-
-	writesourceslistifnotexists wheezy-lts\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ wheezy-lts main non-free contrib
-deb-src	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib
-
-deb	http://security.debian.org/ wheezy-lts/updates main
-deb-src	http://security.debian.org/ wheezy-lts/updates main
-EOF
-
+	# debian8
 	writesourceslistifnotexists jessie\
 <<EOF
-deb	http://ftp.fr.debian.org/debian/ jessie main non-free contrib
-deb-src	http://ftp.fr.debian.org/debian/ jessie main contrib
+deb	http://ftp.fr.debian.org/debian/ jessie main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ jessie main contrib non-free
 
-deb	http://security.debian.org/ jessie/updates main
-deb-src	http://security.debian.org/ jessie/updates main
+deb	http://security.debian.org/ jessie/updates main contrib non-free
+deb-src	http://security.debian.org/ jessie/updates main contrib non-free
 EOF
 
+	# debian9
+	writesourceslistifnotexists stretch\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ stretch main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ stretch main contrib non-free
+
+deb	http://security.debian.org/ stretch/updates main contrib non-free
+deb-src	http://security.debian.org/ stretch/updates main contrib non-free
+EOF
+
+	#debian/stable
+	writesourceslistifnotexists stable\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ stable main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ stable main contrib non-free
+
+deb	http://security.debian.org/ stable/updates main contrib non-free
+deb-src	http://security.debian.org/ stable/updates main contrib non-free
+EOF
+
+
+	writesourceslistifnotexists testing\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ testing main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ testing main contrib non-free
+
+deb	http://security.debian.org/ testing/updates main contrib non-free
+deb-src	http://security.debian.org/ testing/updates main contrib non-free
+EOF
+
+	# # debian/unstable (aka debian/sid)
+	writesourceslistifnotexists unstable\
+<<EOF
+deb	http://ftp.fr.debian.org/debian/ unstable main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ unstable main contrib non-free
+
+deb	http://security.debian.org/ unstable/updates contrib non-free
+deb-src	http://security.debian.org/ unstable/updates contrib non-free
+EOF
 
 }
 
@@ -325,8 +369,8 @@ if [ $# -eq 2 ]; then
 	# 
 	case "$action" in
 		list)
-			list_available | grep "$name"
-			list_enabled   | grep "$name"
+			list_available	| grep "$name"
+			list_enabled	| grep "$name"
 		;;
 		cat)
 			if [ -f "/etc/apt/sources.list.d/$name.list" ]; then
