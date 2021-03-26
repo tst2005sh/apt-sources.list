@@ -1,0 +1,6 @@
+# debian9 stretch
+deb	http://ftp.fr.debian.org/debian/ stretch main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ stretch main contrib non-free
+
+deb	http://security.debian.org/ stretch/updates main contrib non-free
+deb-src	http://security.debian.org/ stretch/updates main contrib non-free

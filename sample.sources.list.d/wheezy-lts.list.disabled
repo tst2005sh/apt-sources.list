@@ -1,0 +1,6 @@
+# debian7 wheezy-lts
+deb	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib non-free
+deb-src	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib non-free
+
+deb	http://security.debian.org/ wheezy-lts/updates main contrib non-free
+deb-src	http://security.debian.org/ wheezy-lts/updates main contrib non-free

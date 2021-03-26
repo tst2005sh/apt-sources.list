@@ -1,0 +1,6 @@
+#debian4 etch
+deb	http://archive.debian.org/debian/ etch main non-free contrib
+deb-src	http://archive.debian.org/debian/ etch main non-free contrib
+
+deb	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
+deb-src	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
