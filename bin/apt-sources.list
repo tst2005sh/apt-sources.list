@@ -2,7 +2,7 @@
 
 # ----------------------------------------------------------------------------
 #	-- apt-sources.list - An utility to manage APT's sources.list files --
-#	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
+#	-- Copyright (c) 2014-2021 TsT worldmaster.fr <tst2005@gmail.com> --
 # ----------------------------------------------------------------------------
 
 # TODO : voir lsb_release -cs -> sqeeze|wheezy|...
@@ -119,7 +119,7 @@ DO_SPLITCONFIG=false
 LIST_ACTIVE=false
 LIST_INACTIVE=false
 LIST_UPDATE=false
-INSTALLSAMPLE=false
+#INSTALLSAMPLE=false
 
 while [ $# -gt 0 ]; do
 	opt="$(alias2command "$1")"
@@ -136,7 +136,7 @@ while [ $# -gt 0 ]; do
 		--fixmode)		DO_CHECK=true; DO_FIXMODE=true ;;
 		--splitconfig)		DO_SPLITCONFIG=true	;;
 		--update|-u)		LIST_UPDATE=true	;;
-		--installsample)	INSTALLSAMPLE=true	;;
+#		--installsample)	INSTALLSAMPLE=true	;;
 		*) break
 	esac
 	shift
@@ -208,139 +208,41 @@ writeifnotexists() {
 	fi
 }
 
-writesourceslistifnotexists() {
-	local dir=/etc/apt/sources.list.d
-	local file="$1";shift
-	case "$file" in
-		*.list)			file="${file%.list}"		;;
-		*.list.disabled)	file="${file%.list.disabled}"	;;
-	esac
-	if [ -n "$file" ] && [ ! -f "$dir/$file.list" ] && [ ! -f "$dir/$file.list.disabled" ]; then
-		echo >&2 "write $file"
-		cat - >> "$dir/$file.list.disabled"
-	fi
-}
-
-do_installsample() {
-
-	#debian4 etch
-	writesourceslistifnotexists etch-archive\
-<<EOF
-deb	http://archive.debian.org/debian/ etch main non-free contrib
-deb-src	http://archive.debian.org/debian/ etch main non-free contrib
-
-deb	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
-deb-src	http://archive.debian.org/debian-archive/debian-security/	etch/updates main non-free contrib
-EOF
-
-	#debian5 lenny
-	#...
-
-	#debian6 squeeze
-	writesourceslistifnotexists squeeze\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ squeeze main non-free contrib
-deb-src	http://ftp.fr.debian.org/debian/ squeeze main contrib
-
-deb	http://security.debian.org/ squeeze/updates main
-deb-src	http://security.debian.org/ squeeze/updates main
-EOF
-
-	# debian6 squeeze-lts
-	writesourceslistifnotexists squeeze-lts\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ squeeze-lts main non-free contrib
-deb-src	http://ftp.fr.debian.org/debian/ squeeze-lts main contrib
-
-#deb	http://security.debian.org/ squeeze-lts/updates main
-#deb-src	http://security.debian.org/ squeeze-lts/updates main
-EOF
-
-	#debian6 squeeze-backports
-	writesourceslistifnotexists squeeze-backports\
-<<EOF
-deb	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
-deb-src	http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
-EOF
-
-	# debian7 wheezy
-	writesourceslistifnotexists wheezy\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ wheezy main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ wheezy main contrib non-free
-
-deb	http://security.debian.org/ wheezy/updates main contrib non-free
-deb-src	http://security.debian.org/ wheezy/updates main contrib non-free
-EOF
-
-	# debian7 wheezy-lts
-	writesourceslistifnotexists wheezy-lts\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ wheezy-lts main contrib non-free
-
-deb	http://security.debian.org/ wheezy-lts/updates main contrib non-free
-deb-src	http://security.debian.org/ wheezy-lts/updates main contrib non-free
-EOF
-
-	# debian7 wheezy-backports
-	writesourceslistifnotexists wheezy-backports\
-<<EOF
-deb	http://ftp.fr.debian.org/debian wheezy-backports main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian wheezy-backports main contrib non-free
-EOF
-
-	# debian8
-	writesourceslistifnotexists jessie\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ jessie main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ jessie main contrib non-free
-
-deb	http://security.debian.org/ jessie/updates main contrib non-free
-deb-src	http://security.debian.org/ jessie/updates main contrib non-free
-EOF
-
-	# debian9
-	writesourceslistifnotexists stretch\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ stretch main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ stretch main contrib non-free
-
-deb	http://security.debian.org/ stretch/updates main contrib non-free
-deb-src	http://security.debian.org/ stretch/updates main contrib non-free
-EOF
-
-	#debian/stable
-	writesourceslistifnotexists stable\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ stable main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ stable main contrib non-free
-
-deb	http://security.debian.org/ stable/updates main contrib non-free
-deb-src	http://security.debian.org/ stable/updates main contrib non-free
-EOF
-
-
-	writesourceslistifnotexists testing\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ testing main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ testing main contrib non-free
-
-deb	http://security.debian.org/ testing/updates main contrib non-free
-deb-src	http://security.debian.org/ testing/updates main contrib non-free
-EOF
-
-	# # debian/unstable (aka debian/sid)
-	writesourceslistifnotexists unstable\
-<<EOF
-deb	http://ftp.fr.debian.org/debian/ unstable main contrib non-free
-deb-src	http://ftp.fr.debian.org/debian/ unstable main contrib non-free
-
-deb	http://security.debian.org/ unstable/updates contrib non-free
-deb-src	http://security.debian.org/ unstable/updates contrib non-free
-EOF
-
-}
+#writesourceslistifnotexists() {
+#	local dir=/etc/apt/sources.list.d
+#	local file="$1";shift
+#	case "$file" in
+#		*.list)			file="${file%.list}"		;;
+#		*.list.disabled)	file="${file%.list.disabled}"	;;
+#	esac
+#	if [ -n "$file" ] && [ ! -f "$dir/$file.list" ] && [ ! -f "$dir/$file.list.disabled" ]; then
+#		echo >&2 "write $file"
+#		cat - >> "$dir/$file.list.disabled"
+#	fi
+#}
+#
+#do_installsample() {
+#
+#	writesourceslistifnotexists testing\
+#<<EOF
+#deb	http://ftp.fr.debian.org/debian/ testing main contrib non-free
+#deb-src	http://ftp.fr.debian.org/debian/ testing main contrib non-free
+#
+#deb	http://security.debian.org/ testing/updates main contrib non-free
+#deb-src	http://security.debian.org/ testing/updates main contrib non-free
+#EOF
+#
+#	# # debian/unstable (aka debian/sid)
+#	writesourceslistifnotexists unstable\
+#<<EOF
+#deb	http://ftp.fr.debian.org/debian/ unstable main contrib non-free
+#deb-src	http://ftp.fr.debian.org/debian/ unstable main contrib non-free
+#
+#deb	http://security.debian.org/ unstable/updates contrib non-free
+#deb-src	http://security.debian.org/ unstable/updates contrib non-free
+#EOF
+#
+#}
 
 _editor() {
 	# may I use $EDITOR ?
@@ -349,7 +251,7 @@ _editor() {
 
 $DO_SPLITCONFIG && do_splitconfig
 
-$INSTALLSAMPLE && do_installsample
+#$INSTALLSAMPLE && do_installsample
 
 $DO_CHECK	&& do_check
 
