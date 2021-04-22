@@ -1,0 +1,6 @@
+deb http://security.debian.org/debian-security buster/updates main contrib non-free
+
+deb http://ftp.fr.debian.org/debian/ buster main contrib non-free
+
+# buster-updates, previously known as 'volatile'
+deb http://ftp.fr.debian.org/debian/ buster-updates main contrib non-free
